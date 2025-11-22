@@ -20,17 +20,26 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.enums import TA_CENTER, TA_LEFT
 
 
-# Dark mode color scheme
-DARK_BG = "#2b2b2b"
-DARK_FG = "#ffffff"
-DARK_INPUT_BG = "#3c3f41"
-DARK_INPUT_FG = "#a9b7c6"
-DARK_BUTTON_BG = "#4e5254"
-DARK_BUTTON_FG = "#ffffff"
-DARK_SELECT_BG = "#214283"
-DARK_BORDER = "#555555"
-DARK_NOTEBOOK_BG = "#313335"
-DARK_ACCENT = "#4a9eff"
+# Modern dark mode color scheme
+DARK_BG = "#1e1e1e"              # Main background
+DARK_FG = "#e4e4e4"              # Main text
+DARK_INPUT_BG = "#2d2d2d"        # Input fields
+DARK_INPUT_FG = "#cccccc"        # Input text
+DARK_BUTTON_BG = "#3a3a3a"       # Button background
+DARK_BUTTON_FG = "#ffffff"       # Button text
+DARK_SELECT_BG = "#094771"       # Selection/hover
+DARK_BORDER = "#3e3e3e"          # Borders
+DARK_NOTEBOOK_BG = "#252526"     # Tab background
+DARK_ACCENT = "#0e7afa"          # Accent color (modern blue)
+DARK_SUCCESS = "#16c60c"         # Success/validation green
+DARK_ERROR = "#f14c4c"           # Error/validation red
+DARK_WARNING = "#cca700"         # Warning yellow
+DARK_PANEL = "#252526"           # Panel/section background
+
+# Application metadata
+APP_NAME = "Wood Cut Optimizer"
+APP_VERSION = "1.0"
+APP_AUTHOR = "Woodworking Solutions"
 
 
 @dataclass
@@ -584,25 +593,48 @@ class PDFGenerator:
 
 class CuttingOptimizerGUI:
     """Main GUI application"""
-    
+
     def __init__(self, root):
         self.root = root
-        self.root.title("Wood Cutting Optimizer")
-        self.root.geometry("1000x700")
-        
+        self.root.title(f"{APP_NAME} v{APP_VERSION}")
+        self.root.geometry("1100x750")
+        self.root.minsize(900, 600)
+
+        # Set application icon (using built-in bitmap)
+        try:
+            # Try to set a window icon - this creates a simple geometric icon
+            self.root.iconbitmap(default='')  # Clear default if any
+        except:
+            pass  # Ignore if icon setting fails
+
         # Apply dark mode
         self.setup_dark_mode()
-        
+
+        # Status bar text
+        self.status_text = tk.StringVar(value="Ready")
+
         # Current project data
         self.stock_boards = []
         self.cut_pieces_data = []
         self.units = tk.StringVar(value="in")
         self.buffer = tk.StringVar(value="0.125")
-        
+
+        # Track units change to update labels
+        self.units.trace_add('write', lambda *args: self.on_units_changed())
+
         self.piece_rows = []
         self.stock_board_rows = []
-        
+
+        # Validation state tracking
+        self.validation_errors = []
+
+        # Setup keyboard shortcuts
+        self.setup_keyboard_shortcuts()
+
         self.setup_ui()
+
+        # Set initial status
+        self.set_status("Ready - Add stock boards and pieces to begin", "ready")
     
     def setup_dark_mode(self):
         """Configure dark mode theme"""
@@ -677,65 +709,221 @@ class CuttingOptimizerGUI:
                        arrowcolor=DARK_FG, troughcolor=DARK_BG)
         style.map('TScrollbar',
                  background=[('active', DARK_SELECT_BG)])
-    
+
+        # Panel/Section frame style
+        style.configure('Panel.TFrame', background=DARK_PANEL, relief='flat')
+
+        # Header label style
+        style.configure('Header.TLabel', background=DARK_BG, foreground=DARK_ACCENT,
+                       font=('Arial', 11, 'bold'))
+
+        # Subheader label style
+        style.configure('Subheader.TLabel', background=DARK_BG, foreground=DARK_FG,
+                       font=('Arial', 9))
+
+        # Status bar style
+        style.configure('Status.TLabel', background=DARK_PANEL, foreground=DARK_FG,
+                       font=('Arial', 9), padding=(10, 5))
+
+        # Delete button style (subtle danger)
+        style.configure('Delete.TButton', background='#4a3030', foreground=DARK_FG)
+        style.map('Delete.TButton',
+                 background=[('active', '#6b4545'), ('pressed', '#5a3838')])
+
+        # Success button style
+        style.configure('Success.TButton', background=DARK_SUCCESS, foreground=DARK_FG)
+        style.map('Success.TButton',
+                 background=[('active', '#1ed615'), ('pressed', '#13a50d')])
+
+    def setup_keyboard_shortcuts(self):
+        """Setup keyboard shortcuts for common actions"""
+        self.root.bind('<Control-s>', lambda e: self.save_project())
+        self.root.bind('<Control-S>', lambda e: self.save_project())
+        self.root.bind('<Control-o>', lambda e: self.load_project())
+        self.root.bind('<Control-O>', lambda e: self.load_project())
+        self.root.bind('<F5>', lambda e: self.run_optimization())
+        self.root.bind('<Control-n>', lambda e: self.clear_all())
+        self.root.bind('<Control-N>', lambda e: self.clear_all())
+
+    def set_status(self, message, status_type="info"):
+        """Update status bar with message and optional color coding"""
+        self.status_text.set(message)
+        if hasattr(self, 'status_label'):
+            if status_type == "error":
+                self.status_label.configure(foreground=DARK_ERROR)
+            elif status_type == "success":
+                self.status_label.configure(foreground=DARK_SUCCESS)
+            elif status_type == "warning":
+                self.status_label.configure(foreground=DARK_WARNING)
+            else:
+                self.status_label.configure(foreground=DARK_FG)
+
+    def create_tooltip(self, widget, text):
+        """Create a tooltip for a widget"""
+        def on_enter(event):
+            tooltip = tk.Toplevel()
+            tooltip.wm_overrideredirect(True)
+            tooltip.wm_geometry(f"+{event.x_root+10}+{event.y_root+10}")
+
+            label = tk.Label(tooltip, text=text, background=DARK_PANEL,
+                           foreground=DARK_FG, relief='solid', borderwidth=1,
+                           font=('Arial', 9), padx=8, pady=4)
+            label.pack()
+
+            widget.tooltip = tooltip
+
+        def on_leave(event):
+            if hasattr(widget, 'tooltip'):
+                widget.tooltip.destroy()
+                del widget.tooltip
+
+        widget.bind('<Enter>', on_enter)
+        widget.bind('<Leave>', on_leave)
+
+    def on_units_changed(self):
+        """Update unit labels when units are changed"""
+        unit = self.units.get()
+
+        # Update buffer unit label
+        if hasattr(self, 'buffer_unit_label'):
+            self.buffer_unit_label.configure(text=unit)
+
+        # Update stock board header labels
+        if hasattr(self, 'stock_header_frame'):
+            for widget in self.stock_header_frame.winfo_children():
+                text = widget.cget('text')
+                if 'Length' in text:
+                    widget.configure(text=f"Length ({unit})")
+                elif 'Width' in text:
+                    widget.configure(text=f"Width ({unit})")
+                elif 'Thickness' in text:
+                    widget.configure(text=f"Thickness ({unit})")
+
+        # Update pieces header labels
+        if hasattr(self, 'pieces_header_frame'):
+            for widget in self.pieces_header_frame.winfo_children():
+                text = widget.cget('text')
+                if 'Length' in text:
+                    widget.configure(text=f"Length ({unit})")
+                elif 'Width' in text:
+                    widget.configure(text=f"Width ({unit})")
+
     def setup_ui(self):
         """Setup the user interface"""
-        # Main container with scrollbar
+        # Main container
         main_frame = ttk.Frame(self.root)
-        main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
-        
-        # Top controls
-        top_frame = ttk.Frame(main_frame)
-        top_frame.pack(fill=tk.X, pady=(0, 10))
-        
-        # Unit toggle
-        ttk.Label(top_frame, text="Units:", font=('Arial', 10, 'bold')).pack(side=tk.LEFT, padx=(0, 5))
-        ttk.Radiobutton(top_frame, text="Inches", variable=self.units, value="in").pack(side=tk.LEFT)
-        ttk.Radiobutton(top_frame, text="Centimeters", variable=self.units, value="cm").pack(side=tk.LEFT, padx=(10, 20))
-        
-        ttk.Label(top_frame, text="Buffer/Kerf:", font=('Arial', 10, 'bold')).pack(side=tk.LEFT, padx=(20, 5))
-        buffer_entry = ttk.Entry(top_frame, textvariable=self.buffer, width=8)
-        buffer_entry.pack(side=tk.LEFT)
-        
-        # File operations
-        ttk.Button(top_frame, text="Save Project", command=self.save_project).pack(side=tk.RIGHT, padx=2)
-        ttk.Button(top_frame, text="Load Project", command=self.load_project).pack(side=tk.RIGHT, padx=2)
-        
-        # Create notebook for tabs
+        main_frame.pack(fill=tk.BOTH, expand=True, padx=12, pady=12)
+
+        # Header section with app title
+        header_frame = ttk.Frame(main_frame, style='Panel.TFrame')
+        header_frame.pack(fill=tk.X, pady=(0, 15))
+
+        title_label = ttk.Label(header_frame, text=f"✂ {APP_NAME}",
+                               font=('Arial', 16, 'bold'), foreground=DARK_ACCENT,
+                               background=DARK_PANEL)
+        title_label.pack(side=tk.LEFT, padx=10, pady=10)
+
+        version_label = ttk.Label(header_frame, text=f"v{APP_VERSION}",
+                                 font=('Arial', 9), foreground=DARK_INPUT_FG,
+                                 background=DARK_PANEL)
+        version_label.pack(side=tk.LEFT, pady=10)
+
+        # Top controls panel
+        top_panel = ttk.Frame(main_frame, style='Panel.TFrame')
+        top_panel.pack(fill=tk.X, pady=(0, 12))
+
+        # Left side - Units and buffer
+        left_controls = ttk.Frame(top_panel, style='Panel.TFrame')
+        left_controls.pack(side=tk.LEFT, padx=10, pady=10)
+
+        # Unit toggle with modern styling
+        units_label = ttk.Label(left_controls, text="Units:", style='Header.TLabel')
+        units_label.grid(row=0, column=0, padx=(0, 10), sticky='w')
+        self.create_tooltip(units_label, "Select measurement units for all dimensions")
+
+        ttk.Radiobutton(left_controls, text="Inches (in)", variable=self.units,
+                       value="in").grid(row=0, column=1, padx=5)
+        ttk.Radiobutton(left_controls, text="Centimeters (cm)", variable=self.units,
+                       value="cm").grid(row=0, column=2, padx=5)
+
+        # Buffer input with unit label
+        buffer_label = ttk.Label(left_controls, text="Saw Kerf:", style='Header.TLabel')
+        buffer_label.grid(row=1, column=0, padx=(0, 10), pady=(10, 0), sticky='w')
+        self.create_tooltip(buffer_label, "Blade width/cutting buffer to account for material loss")
+
+        buffer_entry = ttk.Entry(left_controls, textvariable=self.buffer, width=10)
+        buffer_entry.grid(row=1, column=1, padx=5, pady=(10, 0), sticky='w')
+
+        self.buffer_unit_label = ttk.Label(left_controls, text=self.units.get(),
+                                          foreground=DARK_INPUT_FG, background=DARK_PANEL)
+        self.buffer_unit_label.grid(row=1, column=2, padx=(0, 5), pady=(10, 0), sticky='w')
+
+        # Right side - File operations
+        right_controls = ttk.Frame(top_panel, style='Panel.TFrame')
+        right_controls.pack(side=tk.RIGHT, padx=10, pady=10)
+
+        save_btn = ttk.Button(right_controls, text="💾 Save Project (Ctrl+S)",
+                             command=self.save_project)
+        save_btn.grid(row=0, column=0, padx=5)
+        self.create_tooltip(save_btn, "Save current project to JSON file")
+
+        load_btn = ttk.Button(right_controls, text="📂 Load Project (Ctrl+O)",
+                             command=self.load_project)
+        load_btn.grid(row=0, column=1, padx=5)
+        self.create_tooltip(load_btn, "Load project from JSON file")
+
+        # Create notebook for tabs with better styling
         notebook = ttk.Notebook(main_frame)
-        notebook.pack(fill=tk.BOTH, expand=True)
-        
+        notebook.pack(fill=tk.BOTH, expand=True, pady=(0, 12))
+
         # Stock Boards Tab
         stock_frame = ttk.Frame(notebook)
-        notebook.add(stock_frame, text="Stock Boards")
+        notebook.add(stock_frame, text="📐 Stock Boards")
         self.setup_stock_board_tab(stock_frame)
-        
+
         # Cut Pieces Tab
         pieces_frame = ttk.Frame(notebook)
-        notebook.add(pieces_frame, text="Pieces to Cut")
+        notebook.add(pieces_frame, text="✂ Pieces to Cut")
         self.setup_cut_pieces_tab(pieces_frame)
-        
-        # Bottom buttons
+
+        # Bottom action buttons
         button_frame = ttk.Frame(main_frame)
-        button_frame.pack(fill=tk.X, pady=(10, 0))
-        
-        ttk.Button(button_frame, text="Calculate Optimization", 
-                  command=self.run_optimization, 
-                  style='Accent.TButton').pack(side=tk.LEFT, padx=5)
-        
-        ttk.Button(button_frame, text="Clear All", 
-                  command=self.clear_all).pack(side=tk.LEFT, padx=5)
+        button_frame.pack(fill=tk.X, pady=(0, 10))
+
+        optimize_btn = ttk.Button(button_frame, text="🚀 Calculate Optimization (F5)",
+                                 command=self.run_optimization,
+                                 style='Success.TButton')
+        optimize_btn.pack(side=tk.LEFT, padx=5, ipadx=20, ipady=5)
+        self.create_tooltip(optimize_btn, "Run optimization algorithm to generate cutting plan")
+
+        ttk.Button(button_frame, text="🗑 Clear All (Ctrl+N)",
+                  command=self.clear_all,
+                  style='Delete.TButton').pack(side=tk.LEFT, padx=5)
+
+        # Keyboard shortcuts hint
+        shortcuts_label = ttk.Label(button_frame,
+                                   text="Shortcuts: Ctrl+S=Save | Ctrl+O=Load | F5=Optimize | Ctrl+N=Clear",
+                                   font=('Arial', 8), foreground=DARK_INPUT_FG)
+        shortcuts_label.pack(side=tk.RIGHT, padx=10)
+
+        # Status bar at the bottom
+        status_frame = ttk.Frame(self.root, style='Panel.TFrame', relief='sunken')
+        status_frame.pack(fill=tk.X, side=tk.BOTTOM)
+
+        self.status_label = ttk.Label(status_frame, textvariable=self.status_text,
+                                     style='Status.TLabel', anchor='w')
+        self.status_label.pack(fill=tk.X, side=tk.LEFT)
     
     def setup_stock_board_tab(self, parent):
         """Setup the stock boards input tab"""
-        # Instructions
-        inst_frame = ttk.Frame(parent)
-        inst_frame.pack(fill=tk.X, padx=10, pady=10)
-        
-        ttk.Label(inst_frame, text="Define your stock board sizes:", 
-                 font=('Arial', 10, 'bold')).pack(anchor=tk.W)
-        ttk.Label(inst_frame, text="(Enter the dimensions of uncut boards available)", 
-                 font=('Arial', 9)).pack(anchor=tk.W)
+        # Instructions with modern styling
+        inst_frame = ttk.Frame(parent, style='Panel.TFrame')
+        inst_frame.pack(fill=tk.X, padx=12, pady=12)
+
+        ttk.Label(inst_frame, text="📐 Define Your Stock Board Sizes",
+                 style='Header.TLabel').pack(anchor=tk.W, padx=8, pady=(8, 2))
+        ttk.Label(inst_frame, text="Enter the dimensions of uncut boards you have available",
+                 style='Subheader.TLabel').pack(anchor=tk.W, padx=8, pady=(0, 8))
         
         # Container for scrollable area and button
         container = ttk.Frame(parent)
@@ -757,35 +945,44 @@ class CuttingOptimizerGUI:
         canvas.pack(side="left", fill="both", expand=True)
         scrollbar.pack(side="right", fill="y")
         
-        # Header row
-        header_frame = ttk.Frame(self.stock_scrollable_frame)
-        header_frame.pack(fill=tk.X, pady=5)
-        
-        ttk.Label(header_frame, text="Label", width=15).grid(row=0, column=0, padx=5)
-        ttk.Label(header_frame, text="Length", width=10).grid(row=0, column=1, padx=5)
-        ttk.Label(header_frame, text="Width", width=10).grid(row=0, column=2, padx=5)
-        ttk.Label(header_frame, text="Thickness", width=10).grid(row=0, column=3, padx=5)
-        ttk.Label(header_frame, text="", width=5).grid(row=0, column=4)
+        # Header row with unit indicators
+        header_frame = ttk.Frame(self.stock_scrollable_frame, style='Panel.TFrame')
+        header_frame.pack(fill=tk.X, pady=8, padx=5)
+
+        ttk.Label(header_frame, text="Label", font=('Arial', 9, 'bold'),
+                 width=15).grid(row=0, column=0, padx=5, sticky='w')
+        ttk.Label(header_frame, text=f"Length ({self.units.get()})",
+                 font=('Arial', 9, 'bold'), width=12).grid(row=0, column=1, padx=5, sticky='w')
+        ttk.Label(header_frame, text=f"Width ({self.units.get()})",
+                 font=('Arial', 9, 'bold'), width=12).grid(row=0, column=2, padx=5, sticky='w')
+        ttk.Label(header_frame, text=f"Thickness ({self.units.get()})",
+                 font=('Arial', 9, 'bold'), width=14).grid(row=0, column=3, padx=5, sticky='w')
+        ttk.Label(header_frame, text="", width=8).grid(row=0, column=4)
+
+        # Store header frame to update units later
+        self.stock_header_frame = header_frame
         
         # Add initial stock board row
         self.add_stock_board_row()
         
-        # Add button pinned to bottom
-        add_btn_frame = ttk.Frame(parent)
-        add_btn_frame.pack(side=tk.BOTTOM, fill=tk.X, pady=10, padx=10)
-        ttk.Button(add_btn_frame, text="+ Add Stock Board", 
-                  command=self.add_stock_board_row).pack()
+        # Add button pinned to bottom with modern styling
+        add_btn_frame = ttk.Frame(parent, style='Panel.TFrame')
+        add_btn_frame.pack(side=tk.BOTTOM, fill=tk.X, pady=12, padx=12)
+        add_btn = ttk.Button(add_btn_frame, text="➕ Add Stock Board",
+                            command=self.add_stock_board_row, style='Accent.TButton')
+        add_btn.pack(ipadx=10, ipady=3)
+        self.create_tooltip(add_btn, "Add another stock board size")
     
     def setup_cut_pieces_tab(self, parent):
         """Setup the cut pieces input tab"""
-        # Instructions
-        inst_frame = ttk.Frame(parent)
-        inst_frame.pack(fill=tk.X, padx=10, pady=10)
-        
-        ttk.Label(inst_frame, text="Define pieces to cut:", 
-                 font=('Arial', 10, 'bold')).pack(anchor=tk.W)
-        ttk.Label(inst_frame, text="(Enter dimensions, quantities, and select stock board for each piece)", 
-                 font=('Arial', 9)).pack(anchor=tk.W)
+        # Instructions with modern styling
+        inst_frame = ttk.Frame(parent, style='Panel.TFrame')
+        inst_frame.pack(fill=tk.X, padx=12, pady=12)
+
+        ttk.Label(inst_frame, text="✂ Define Pieces to Cut",
+                 style='Header.TLabel').pack(anchor=tk.W, padx=8, pady=(8, 2))
+        ttk.Label(inst_frame, text="Enter dimensions, quantities, and select the stock board for each piece",
+                 style='Subheader.TLabel').pack(anchor=tk.W, padx=8, pady=(0, 8))
         
         # Container for scrollable area and button
         container = ttk.Frame(parent)
@@ -807,25 +1004,35 @@ class CuttingOptimizerGUI:
         canvas.pack(side="left", fill="both", expand=True)
         scrollbar.pack(side="right", fill="y")
         
-        # Header row
-        header_frame = ttk.Frame(self.pieces_scrollable_frame)
-        header_frame.pack(fill=tk.X, pady=5)
-        
-        ttk.Label(header_frame, text="Label (Optional)", width=15).grid(row=0, column=0, padx=5)
-        ttk.Label(header_frame, text="Length", width=10).grid(row=0, column=1, padx=5)
-        ttk.Label(header_frame, text="Width", width=10).grid(row=0, column=2, padx=5)
-        ttk.Label(header_frame, text="Quantity", width=10).grid(row=0, column=3, padx=5)
-        ttk.Label(header_frame, text="Stock Board", width=20).grid(row=0, column=4, padx=5)
-        ttk.Label(header_frame, text="", width=5).grid(row=0, column=5)
+        # Header row with unit indicators
+        header_frame = ttk.Frame(self.pieces_scrollable_frame, style='Panel.TFrame')
+        header_frame.pack(fill=tk.X, pady=8, padx=5)
+
+        ttk.Label(header_frame, text="Label (Optional)", font=('Arial', 9, 'bold'),
+                 width=15).grid(row=0, column=0, padx=5, sticky='w')
+        ttk.Label(header_frame, text=f"Length ({self.units.get()})",
+                 font=('Arial', 9, 'bold'), width=12).grid(row=0, column=1, padx=5, sticky='w')
+        ttk.Label(header_frame, text=f"Width ({self.units.get()})",
+                 font=('Arial', 9, 'bold'), width=12).grid(row=0, column=2, padx=5, sticky='w')
+        ttk.Label(header_frame, text="Quantity", font=('Arial', 9, 'bold'),
+                 width=10).grid(row=0, column=3, padx=5, sticky='w')
+        ttk.Label(header_frame, text="Stock Board", font=('Arial', 9, 'bold'),
+                 width=20).grid(row=0, column=4, padx=5, sticky='w')
+        ttk.Label(header_frame, text="", width=8).grid(row=0, column=5)
+
+        # Store header frame to update units later
+        self.pieces_header_frame = header_frame
         
         # Add initial row
         self.add_piece_row()
         
-        # Add button pinned to bottom
-        add_btn_frame = ttk.Frame(parent)
-        add_btn_frame.pack(side=tk.BOTTOM, fill=tk.X, pady=10, padx=10)
-        ttk.Button(add_btn_frame, text="+ Add Piece", 
-                  command=self.add_piece_row).pack()
+        # Add button pinned to bottom with modern styling
+        add_btn_frame = ttk.Frame(parent, style='Panel.TFrame')
+        add_btn_frame.pack(side=tk.BOTTOM, fill=tk.X, pady=12, padx=12)
+        add_btn = ttk.Button(add_btn_frame, text="➕ Add Piece",
+                            command=self.add_piece_row, style='Accent.TButton')
+        add_btn.pack(ipadx=10, ipady=3)
+        self.create_tooltip(add_btn, "Add another piece to cut")
     
     def add_stock_board_row(self):
         """Add a new stock board input row"""
@@ -847,9 +1054,11 @@ class CuttingOptimizerGUI:
         thickness_var.trace_add('write', lambda *args: self.update_all_stock_board_dropdowns())
         label_var.trace_add('write', lambda *args: self.update_all_stock_board_dropdowns())
         
-        remove_btn = ttk.Button(row_frame, text="Remove", 
-                               command=lambda: self.remove_stock_board_row(row_frame))
+        remove_btn = ttk.Button(row_frame, text="✖",
+                               command=lambda: self.remove_stock_board_row(row_frame),
+                               style='Delete.TButton', width=3)
         remove_btn.grid(row=0, column=4, padx=5)
+        self.create_tooltip(remove_btn, "Remove this stock board")
         
         self.stock_board_rows.append({
             'frame': row_frame,
@@ -918,9 +1127,11 @@ class CuttingOptimizerGUI:
         if stock_board_combo['values'] and stock_board_combo['values'][0] != "No stock boards defined":
             stock_board_combo.current(0)
         
-        remove_btn = ttk.Button(row_frame, text="Remove", 
-                               command=lambda: self.remove_piece_row(row_frame))
+        remove_btn = ttk.Button(row_frame, text="✖",
+                               command=lambda: self.remove_piece_row(row_frame),
+                               style='Delete.TButton', width=3)
         remove_btn.grid(row=0, column=5, padx=5)
+        self.create_tooltip(remove_btn, "Remove this piece")
         
         self.piece_rows.append({
             'frame': row_frame,
@@ -1022,49 +1233,62 @@ class CuttingOptimizerGUI:
     
     def run_optimization(self):
         """Run the optimization and generate outputs"""
+        self.set_status("Validating inputs...", "info")
+
         # Validate inputs
         errors, stock_boards, cut_pieces = self.validate_inputs()
-        
+
         if errors:
+            self.set_status(f"Validation failed: {len(errors)} error(s) found", "error")
             messagebox.showerror("Validation Error", "\n".join(errors))
             return
         
         # Additional validation - check if pieces can fit
         try:
+            self.set_status("Checking piece sizes...", "info")
             buffer_val = float(self.buffer.get())
             engine = OptimizationEngine(stock_boards, cut_pieces, buffer_val, self.units.get())
             fit_errors = engine.validate_pieces()
-            
+
             if fit_errors:
+                self.set_status("Validation failed: Pieces too large", "error")
                 messagebox.showerror("Piece Too Large", "\n".join(fit_errors))
                 return
         except Exception as e:
+            self.set_status(f"Validation error: {str(e)}", "error")
             messagebox.showerror("Error", f"Validation failed: {str(e)}")
             return
-        
+
         # Run optimization
         try:
+            self.set_status("Running optimization algorithm...", "info")
             results = engine.optimize()
-            
+
             if not results:
+                self.set_status("Optimization failed", "error")
                 messagebox.showerror("Error", "Could not optimize cutting layout")
                 return
-            
+
             # Show results summary
             total_boards = len(results)
             total_pieces = sum(len(r['placed_pieces']) for r in results)
             avg_waste = sum(r['waste_percentage'] for r in results) / len(results)
-            
+
+            self.set_status(f"✓ Optimization complete: {total_boards} boards, {avg_waste:.1f}% avg waste", "success")
+
             summary = f"Optimization Complete!\n\n"
             summary += f"Total boards needed: {total_boards}\n"
             summary += f"Total pieces cut: {total_pieces}\n"
             summary += f"Average waste: {avg_waste:.1f}%\n\n"
             summary += "Would you like to export the results?"
-            
+
             if messagebox.askyesno("Optimization Complete", summary):
                 self.export_results(results)
-        
+            else:
+                self.set_status("Optimization complete - Results not exported", "info")
+
         except Exception as e:
+            self.set_status(f"Optimization error: {str(e)}", "error")
             messagebox.showerror("Optimization Error", f"An error occurred: {str(e)}")
     
     def export_results(self, results):
@@ -1075,24 +1299,29 @@ class CuttingOptimizerGUI:
             filetypes=[("PDF files", "*.pdf"), ("All files", "*.*")],
             title="Save Cutting Diagrams"
         )
-        
+
         if not filename:
+            self.set_status("Export cancelled", "info")
             return
-        
+
         try:
+            self.set_status("Generating PDF...", "info")
             # Generate PDF
             buffer_val = float(self.buffer.get())
             pdf_gen = PDFGenerator(results, self.units.get(), buffer_val)
             pdf_gen.generate(filename)
-            
+
+            self.set_status("Generating cutting list...", "info")
             # Generate text file
             txt_filename = filename.rsplit('.', 1)[0] + "_cutting_list.txt"
             self.generate_text_report(results, txt_filename)
-            
-            messagebox.showinfo("Export Complete", 
+
+            self.set_status(f"✓ Files exported successfully", "success")
+            messagebox.showinfo("Export Complete",
                               f"Files saved:\n{filename}\n{txt_filename}")
-        
+
         except Exception as e:
+            self.set_status(f"Export failed: {str(e)}", "error")
             messagebox.showerror("Export Error", f"Failed to export: {str(e)}")
     
     def generate_text_report(self, results, filename):
@@ -1142,11 +1371,14 @@ class CuttingOptimizerGUI:
             filetypes=[("JSON files", "*.json"), ("All files", "*.*")],
             title="Save Project"
         )
-        
+
         if not filename:
+            self.set_status("Save cancelled", "info")
             return
-        
+
         try:
+            self.set_status("Saving project...", "info")
+
             # Collect all data
             stock_boards = []
             for row in self.stock_board_rows:
@@ -1157,7 +1389,7 @@ class CuttingOptimizerGUI:
                         'width': row['width'].get(),
                         'thickness': row['thickness'].get()
                     })
-            
+
             cut_pieces = []
             stock_board_options = self.get_stock_board_options()
             for row in self.piece_rows:
@@ -1169,7 +1401,7 @@ class CuttingOptimizerGUI:
                             stock_board_index = stock_board_options.index(stock_board_selection)
                         except ValueError:
                             stock_board_index = -1
-                    
+
                     cut_pieces.append({
                         'label': row['label'].get(),
                         'length': row['length'].get(),
@@ -1177,20 +1409,22 @@ class CuttingOptimizerGUI:
                         'quantity': row['quantity'].get(),
                         'stock_board_index': stock_board_index
                     })
-            
+
             project_data = {
                 'units': self.units.get(),
                 'buffer': self.buffer.get(),
                 'stock_boards': stock_boards,
                 'cut_pieces': cut_pieces
             }
-            
+
             with open(filename, 'w') as f:
                 json.dump(project_data, f, indent=2)
-            
+
+            self.set_status(f"✓ Project saved successfully", "success")
             messagebox.showinfo("Success", "Project saved successfully")
-        
+
         except Exception as e:
+            self.set_status(f"Save failed: {str(e)}", "error")
             messagebox.showerror("Save Error", f"Failed to save project: {str(e)}")
     
     def load_project(self):
@@ -1199,21 +1433,24 @@ class CuttingOptimizerGUI:
             filetypes=[("JSON files", "*.json"), ("All files", "*.*")],
             title="Load Project"
         )
-        
+
         if not filename:
+            self.set_status("Load cancelled", "info")
             return
-        
+
         try:
+            self.set_status("Loading project...", "info")
+
             with open(filename, 'r') as f:
                 project_data = json.load(f)
-            
+
             # Clear existing data WITHOUT adding default rows
             self._clear_all_silent()
-            
+
             # Load settings
             self.units.set(project_data.get('units', 'in'))
             self.buffer.set(project_data.get('buffer', '0.125'))
-            
+
             # Load stock boards FIRST (so indices are correct)
             stock_boards_data = project_data.get('stock_boards', [])
             if not stock_boards_data:
@@ -1227,11 +1464,11 @@ class CuttingOptimizerGUI:
                     row['length'].set(board_data.get('length', ''))
                     row['width'].set(board_data.get('width', ''))
                     row['thickness'].set(board_data.get('thickness', ''))
-            
+
             # Update dropdowns after loading stock boards
             self.update_all_stock_board_dropdowns()
             stock_board_options = self.get_stock_board_options()
-            
+
             # Load cut pieces AFTER stock boards are loaded
             cut_pieces_data = project_data.get('cut_pieces', [])
             if not cut_pieces_data:
@@ -1245,7 +1482,7 @@ class CuttingOptimizerGUI:
                     row['length'].set(piece_data.get('length', ''))
                     row['width'].set(piece_data.get('width', ''))
                     row['quantity'].set(piece_data.get('quantity', '1'))
-                    
+
                     # Set stock board selection using the saved index
                     stock_board_index = piece_data.get('stock_board_index', 0)
                     if 0 <= stock_board_index < len(stock_board_options):
@@ -1255,10 +1492,12 @@ class CuttingOptimizerGUI:
                         # Index out of range, default to first board if available
                         if stock_board_options and stock_board_options[0] != "No stock boards defined":
                             row['stock_board_combo'].current(0)
-            
+
+            self.set_status(f"✓ Project loaded successfully", "success")
             messagebox.showinfo("Success", "Project loaded successfully")
-        
+
         except Exception as e:
+            self.set_status(f"Load failed: {str(e)}", "error")
             messagebox.showerror("Load Error", f"Failed to load project: {str(e)}")
     
     def _clear_all_silent(self):
@@ -1284,6 +1523,9 @@ class CuttingOptimizerGUI:
             # Add default rows after clearing
             self.add_stock_board_row()
             self.add_piece_row()
+            self.set_status("All inputs cleared", "info")
+        else:
+            self.set_status("Clear cancelled", "info")
 
 
 def main():
