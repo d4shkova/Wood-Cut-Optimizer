@@ -20,21 +20,42 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.enums import TA_CENTER, TA_LEFT
 
 
-# Modern dark mode color scheme
-DARK_BG = "#1e1e1e"              # Main background
-DARK_FG = "#e4e4e4"              # Main text
-DARK_INPUT_BG = "#2d2d2d"        # Input fields
-DARK_INPUT_FG = "#cccccc"        # Input text
-DARK_BUTTON_BG = "#3a3a3a"       # Button background
-DARK_BUTTON_FG = "#ffffff"       # Button text
-DARK_SELECT_BG = "#094771"       # Selection/hover
-DARK_BORDER = "#3e3e3e"          # Borders
-DARK_NOTEBOOK_BG = "#252526"     # Tab background
-DARK_ACCENT = "#0e7afa"          # Accent color (modern blue)
-DARK_SUCCESS = "#16c60c"         # Success/validation green
-DARK_ERROR = "#f14c4c"           # Error/validation red
-DARK_WARNING = "#cca700"         # Warning yellow
-DARK_PANEL = "#252526"           # Panel/section background
+# Professional dark mode color scheme - Inspired by modern SaaS design
+# Base colors
+DARK_BG = "#0d0d0d"              # Main background - Deep black
+DARK_PANEL = "#1a1a1a"           # Panel/section background - Subtle lift
+DARK_SURFACE = "#242424"         # Card/surface background
+DARK_BORDER = "#2d2d2d"          # Borders - Subtle separation
+
+# Text colors
+DARK_FG = "#e3e3e3"              # Primary text - Soft white
+DARK_FG_SECONDARY = "#a0a0a0"    # Secondary text - Muted gray
+DARK_FG_TERTIARY = "#6b6b6b"     # Tertiary text - Subtle gray
+
+# Input colors
+DARK_INPUT_BG = "#1f1f1f"        # Input fields - Slightly lighter than bg
+DARK_INPUT_FG = "#d4d4d4"        # Input text
+DARK_INPUT_BORDER = "#333333"    # Input borders
+DARK_INPUT_FOCUS = "#3d3d3d"     # Input focus state
+
+# Interactive colors
+DARK_ACCENT = "#3b82f6"          # Accent blue - Modern, professional
+DARK_ACCENT_HOVER = "#60a5fa"    # Accent hover state
+DARK_BUTTON_BG = "#262626"       # Default button
+DARK_BUTTON_FG = "#e3e3e3"       # Button text
+DARK_SELECT_BG = "#1e3a5f"       # Selection background
+
+# Semantic colors
+DARK_SUCCESS = "#10b981"         # Success green - Modern emerald
+DARK_SUCCESS_BG = "#064e3b"      # Success background
+DARK_ERROR = "#ef4444"           # Error red - Modern crimson
+DARK_ERROR_BG = "#7f1d1d"        # Error background
+DARK_WARNING = "#f59e0b"         # Warning amber
+DARK_WARNING_BG = "#78350f"      # Warning background
+
+# Tab/Notebook colors
+DARK_NOTEBOOK_BG = "#161616"     # Tab background
+DARK_NOTEBOOK_SELECTED = "#242424"  # Selected tab
 
 # Application metadata
 APP_NAME = "Wood Cut Optimizer"
@@ -637,103 +658,120 @@ class CuttingOptimizerGUI:
         self.set_status("Ready - Add stock boards and pieces to begin", "ready")
     
     def setup_dark_mode(self):
-        """Configure dark mode theme"""
+        """Configure professional dark mode theme"""
         style = ttk.Style()
-        
+
         # Configure root window
         self.root.configure(bg=DARK_BG)
-        
+
         # Configure ttk styles
         style.theme_use('clam')
-        
+
         # Configure general styles
-        style.configure('.', background=DARK_BG, foreground=DARK_FG, 
+        style.configure('.', background=DARK_BG, foreground=DARK_FG,
                        fieldbackground=DARK_INPUT_BG, bordercolor=DARK_BORDER)
-        
+
         # Frame styles
-        style.configure('TFrame', background=DARK_BG)
+        style.configure('TFrame', background=DARK_BG, borderwidth=0)
         style.configure('TLabelframe', background=DARK_BG, foreground=DARK_FG,
                        bordercolor=DARK_BORDER)
         style.configure('TLabelframe.Label', background=DARK_BG, foreground=DARK_FG)
-        
+
         # Label styles
-        style.configure('TLabel', background=DARK_BG, foreground=DARK_FG)
-        
-        # Entry styles
+        style.configure('TLabel', background=DARK_BG, foreground=DARK_FG,
+                       font=('Segoe UI', 9))
+
+        # Entry styles with modern focus states
         style.configure('TEntry', fieldbackground=DARK_INPUT_BG, foreground=DARK_INPUT_FG,
-                       bordercolor=DARK_BORDER, lightcolor=DARK_BORDER, darkcolor=DARK_BORDER,
-                       insertcolor=DARK_FG)
-        style.map('TEntry', 
-                 fieldbackground=[('focus', DARK_SELECT_BG)],
+                       bordercolor=DARK_INPUT_BORDER, lightcolor=DARK_INPUT_BORDER,
+                       darkcolor=DARK_INPUT_BORDER, insertcolor=DARK_ACCENT,
+                       borderwidth=1, relief='flat')
+        style.map('TEntry',
+                 fieldbackground=[('focus', DARK_INPUT_BG)],
+                 bordercolor=[('focus', DARK_ACCENT)],
                  lightcolor=[('focus', DARK_ACCENT)])
-        
-        # Button styles
+
+        # Button styles - Modern flat design
         style.configure('TButton', background=DARK_BUTTON_BG, foreground=DARK_BUTTON_FG,
-                       bordercolor=DARK_BORDER, lightcolor=DARK_BUTTON_BG, darkcolor=DARK_BUTTON_BG)
+                       bordercolor=DARK_BORDER, borderwidth=1, relief='flat',
+                       font=('Segoe UI', 9), padding=(12, 6))
         style.map('TButton',
-                 background=[('active', DARK_SELECT_BG), ('pressed', DARK_SELECT_BG)],
-                 foreground=[('active', DARK_FG)])
-        
-        # Accent button style
-        style.configure('Accent.TButton', background=DARK_ACCENT, foreground=DARK_FG)
+                 background=[('active', DARK_SURFACE), ('pressed', DARK_INPUT_FOCUS)],
+                 bordercolor=[('active', DARK_INPUT_BORDER), ('focus', DARK_ACCENT)])
+
+        # Accent button style - Primary action
+        style.configure('Accent.TButton', background=DARK_ACCENT, foreground='#ffffff',
+                       borderwidth=0, font=('Segoe UI', 9, 'bold'), padding=(12, 6))
         style.map('Accent.TButton',
-                 background=[('active', '#5eb0ff'), ('pressed', '#3a85cc')])
-        
+                 background=[('active', DARK_ACCENT_HOVER), ('pressed', '#2563eb')])
+
         # Radiobutton styles
         style.configure('TRadiobutton', background=DARK_BG, foreground=DARK_FG,
-                       bordercolor=DARK_BORDER)
+                       bordercolor=DARK_BORDER, font=('Segoe UI', 9))
         style.map('TRadiobutton',
                  background=[('active', DARK_BG)],
-                 indicatorcolor=[('selected', DARK_ACCENT)])
-        
-        # Notebook (tab) styles
-        style.configure('TNotebook', background=DARK_BG, bordercolor=DARK_BORDER)
-        style.configure('TNotebook.Tab', background=DARK_BUTTON_BG, foreground=DARK_FG,
-                       bordercolor=DARK_BORDER, lightcolor=DARK_BORDER)
+                 indicatorcolor=[('selected', DARK_ACCENT), ('!selected', DARK_INPUT_BORDER)])
+
+        # Notebook (tab) styles - Sleek tabs
+        style.configure('TNotebook', background=DARK_BG, bordercolor=DARK_BORDER,
+                       borderwidth=0, tabmargins=[0, 0, 0, 0])
+        style.configure('TNotebook.Tab', background=DARK_NOTEBOOK_BG, foreground=DARK_FG_SECONDARY,
+                       bordercolor=DARK_BORDER, padding=(16, 10), font=('Segoe UI', 9))
         style.map('TNotebook.Tab',
-                 background=[('selected', DARK_NOTEBOOK_BG), ('active', DARK_SELECT_BG)],
-                 foreground=[('selected', DARK_FG)])
-        
+                 background=[('selected', DARK_NOTEBOOK_SELECTED), ('active', DARK_SURFACE)],
+                 foreground=[('selected', DARK_FG)],
+                 expand=[('selected', [0, 0, 0, 0])])
+
         # Combobox styles
-        style.configure('TCombobox', fieldbackground=DARK_INPUT_BG, background=DARK_BUTTON_BG,
-                       foreground=DARK_INPUT_FG, bordercolor=DARK_BORDER,
-                       arrowcolor=DARK_FG, selectbackground=DARK_SELECT_BG,
-                       selectforeground=DARK_FG)
+        style.configure('TCombobox', fieldbackground=DARK_INPUT_BG, background=DARK_SURFACE,
+                       foreground=DARK_INPUT_FG, bordercolor=DARK_INPUT_BORDER,
+                       arrowcolor=DARK_FG_SECONDARY, selectbackground=DARK_SELECT_BG,
+                       selectforeground=DARK_FG, borderwidth=1, relief='flat',
+                       font=('Segoe UI', 9))
         style.map('TCombobox',
                  fieldbackground=[('readonly', DARK_INPUT_BG)],
                  selectbackground=[('readonly', DARK_INPUT_BG)],
-                 foreground=[('readonly', DARK_INPUT_FG)])
-        
-        # Scrollbar styles
-        style.configure('TScrollbar', background=DARK_BUTTON_BG, bordercolor=DARK_BORDER,
-                       arrowcolor=DARK_FG, troughcolor=DARK_BG)
+                 foreground=[('readonly', DARK_INPUT_FG)],
+                 bordercolor=[('focus', DARK_ACCENT)])
+
+        # Scrollbar styles - Minimal design
+        style.configure('TScrollbar', background=DARK_SURFACE, bordercolor=DARK_BG,
+                       arrowcolor=DARK_FG_TERTIARY, troughcolor=DARK_BG,
+                       borderwidth=0, width=12)
         style.map('TScrollbar',
-                 background=[('active', DARK_SELECT_BG)])
+                 background=[('active', DARK_INPUT_FOCUS)])
 
-        # Panel/Section frame style
-        style.configure('Panel.TFrame', background=DARK_PANEL, relief='flat')
+        # Panel/Section frame style - Elevated surface
+        style.configure('Panel.TFrame', background=DARK_PANEL, relief='flat', borderwidth=0)
 
-        # Header label style
-        style.configure('Header.TLabel', background=DARK_BG, foreground=DARK_ACCENT,
-                       font=('Arial', 11, 'bold'))
+        # Surface frame style - Card-like elevated surface
+        style.configure('Surface.TFrame', background=DARK_SURFACE, relief='flat', borderwidth=1)
+
+        # Header label style - Accent colored headers
+        style.configure('Header.TLabel', background=DARK_PANEL, foreground=DARK_ACCENT,
+                       font=('Segoe UI', 10, 'bold'))
 
         # Subheader label style
-        style.configure('Subheader.TLabel', background=DARK_BG, foreground=DARK_FG,
-                       font=('Arial', 9))
+        style.configure('Subheader.TLabel', background=DARK_PANEL, foreground=DARK_FG_SECONDARY,
+                       font=('Segoe UI', 9))
 
         # Status bar style
-        style.configure('Status.TLabel', background=DARK_PANEL, foreground=DARK_FG,
-                       font=('Arial', 9), padding=(10, 5))
+        style.configure('Status.TLabel', background=DARK_PANEL, foreground=DARK_FG_SECONDARY,
+                       font=('Segoe UI', 8), padding=(12, 6))
 
-        # Delete button style (subtle danger)
-        style.configure('Delete.TButton', background='#4a3030', foreground=DARK_FG)
+        # Delete button style (danger action)
+        style.configure('Delete.TButton', background=DARK_SURFACE, foreground=DARK_ERROR,
+                       bordercolor=DARK_BORDER, borderwidth=1, font=('Segoe UI', 9),
+                       padding=(8, 6))
         style.map('Delete.TButton',
-                 background=[('active', '#6b4545'), ('pressed', '#5a3838')])
+                 background=[('active', DARK_ERROR_BG), ('pressed', DARK_ERROR_BG)],
+                 foreground=[('active', '#ffffff')])
 
-        # Success button style
-        style.configure('Success.TButton', background=DARK_SUCCESS, foreground=DARK_FG)
+        # Success button style (primary action)
+        style.configure('Success.TButton', background=DARK_SUCCESS, foreground='#ffffff',
+                       borderwidth=0, font=('Segoe UI', 10, 'bold'), padding=(16, 8))
         style.map('Success.TButton',
-                 background=[('active', '#1ed615'), ('pressed', '#13a50d')])
+                 background=[('active', '#14b887'), ('pressed', '#0d9668')])
 
     def setup_keyboard_shortcuts(self):
         """Setup keyboard shortcuts for common actions"""
@@ -814,19 +852,19 @@ class CuttingOptimizerGUI:
         main_frame = ttk.Frame(self.root)
         main_frame.pack(fill=tk.BOTH, expand=True, padx=12, pady=12)
 
-        # Header section with app title
+        # Header section with app title - Modern, clean design
         header_frame = ttk.Frame(main_frame, style='Panel.TFrame')
-        header_frame.pack(fill=tk.X, pady=(0, 15))
+        header_frame.pack(fill=tk.X, pady=(0, 20))
 
-        title_label = ttk.Label(header_frame, text=f"✂ {APP_NAME}",
-                               font=('Arial', 16, 'bold'), foreground=DARK_ACCENT,
+        title_label = ttk.Label(header_frame, text=APP_NAME,
+                               font=('Segoe UI', 20, 'bold'), foreground=DARK_FG,
                                background=DARK_PANEL)
-        title_label.pack(side=tk.LEFT, padx=10, pady=10)
+        title_label.pack(side=tk.LEFT, padx=15, pady=15)
 
         version_label = ttk.Label(header_frame, text=f"v{APP_VERSION}",
-                                 font=('Arial', 9), foreground=DARK_INPUT_FG,
+                                 font=('Segoe UI', 9), foreground=DARK_FG_TERTIARY,
                                  background=DARK_PANEL)
-        version_label.pack(side=tk.LEFT, pady=10)
+        version_label.pack(side=tk.LEFT, pady=15)
 
         # Top controls panel
         top_panel = ttk.Frame(main_frame, style='Panel.TFrame')
@@ -862,48 +900,51 @@ class CuttingOptimizerGUI:
         right_controls = ttk.Frame(top_panel, style='Panel.TFrame')
         right_controls.pack(side=tk.RIGHT, padx=10, pady=10)
 
-        save_btn = ttk.Button(right_controls, text="💾 Save Project (Ctrl+S)",
+        save_btn = ttk.Button(right_controls, text="Save Project",
                              command=self.save_project)
-        save_btn.grid(row=0, column=0, padx=5)
-        self.create_tooltip(save_btn, "Save current project to JSON file")
+        save_btn.grid(row=0, column=0, padx=4)
+        self.create_tooltip(save_btn, "Save current project to JSON file (Ctrl+S)")
 
-        load_btn = ttk.Button(right_controls, text="📂 Load Project (Ctrl+O)",
+        load_btn = ttk.Button(right_controls, text="Load Project",
                              command=self.load_project)
-        load_btn.grid(row=0, column=1, padx=5)
-        self.create_tooltip(load_btn, "Load project from JSON file")
+        load_btn.grid(row=0, column=1, padx=4)
+        self.create_tooltip(load_btn, "Load project from JSON file (Ctrl+O)")
 
         # Create notebook for tabs with better styling
         notebook = ttk.Notebook(main_frame)
-        notebook.pack(fill=tk.BOTH, expand=True, pady=(0, 12))
+        notebook.pack(fill=tk.BOTH, expand=True, pady=(0, 16))
 
         # Stock Boards Tab
         stock_frame = ttk.Frame(notebook)
-        notebook.add(stock_frame, text="📐 Stock Boards")
+        notebook.add(stock_frame, text="Stock Boards")
         self.setup_stock_board_tab(stock_frame)
 
         # Cut Pieces Tab
         pieces_frame = ttk.Frame(notebook)
-        notebook.add(pieces_frame, text="✂ Pieces to Cut")
+        notebook.add(pieces_frame, text="Pieces to Cut")
         self.setup_cut_pieces_tab(pieces_frame)
 
         # Bottom action buttons
         button_frame = ttk.Frame(main_frame)
-        button_frame.pack(fill=tk.X, pady=(0, 10))
+        button_frame.pack(fill=tk.X, pady=(0, 12))
 
-        optimize_btn = ttk.Button(button_frame, text="🚀 Calculate Optimization (F5)",
+        optimize_btn = ttk.Button(button_frame, text="Calculate Optimization",
                                  command=self.run_optimization,
                                  style='Success.TButton')
-        optimize_btn.pack(side=tk.LEFT, padx=5, ipadx=20, ipady=5)
-        self.create_tooltip(optimize_btn, "Run optimization algorithm to generate cutting plan")
+        optimize_btn.pack(side=tk.LEFT, padx=(0, 8))
+        self.create_tooltip(optimize_btn, "Run optimization algorithm (F5)")
 
-        ttk.Button(button_frame, text="🗑 Clear All (Ctrl+N)",
-                  command=self.clear_all,
-                  style='Delete.TButton').pack(side=tk.LEFT, padx=5)
+        clear_btn = ttk.Button(button_frame, text="Clear All",
+                              command=self.clear_all,
+                              style='Delete.TButton')
+        clear_btn.pack(side=tk.LEFT, padx=(0, 8))
+        self.create_tooltip(clear_btn, "Clear all inputs (Ctrl+N)")
 
-        # Keyboard shortcuts hint
+        # Keyboard shortcuts hint - More subtle
         shortcuts_label = ttk.Label(button_frame,
-                                   text="Shortcuts: Ctrl+S=Save | Ctrl+O=Load | F5=Optimize | Ctrl+N=Clear",
-                                   font=('Arial', 8), foreground=DARK_INPUT_FG)
+                                   text="Ctrl+S Save • Ctrl+O Load • F5 Optimize • Ctrl+N Clear",
+                                   font=('Segoe UI', 8), foreground=DARK_FG_TERTIARY,
+                                   background=DARK_BG)
         shortcuts_label.pack(side=tk.RIGHT, padx=10)
 
         # Status bar at the bottom
@@ -918,12 +959,12 @@ class CuttingOptimizerGUI:
         """Setup the stock boards input tab"""
         # Instructions with modern styling
         inst_frame = ttk.Frame(parent, style='Panel.TFrame')
-        inst_frame.pack(fill=tk.X, padx=12, pady=12)
+        inst_frame.pack(fill=tk.X, padx=16, pady=16)
 
-        ttk.Label(inst_frame, text="📐 Define Your Stock Board Sizes",
-                 style='Header.TLabel').pack(anchor=tk.W, padx=8, pady=(8, 2))
-        ttk.Label(inst_frame, text="Enter the dimensions of uncut boards you have available",
-                 style='Subheader.TLabel').pack(anchor=tk.W, padx=8, pady=(0, 8))
+        ttk.Label(inst_frame, text="Stock Board Sizes",
+                 style='Header.TLabel').pack(anchor=tk.W, padx=0, pady=(0, 4))
+        ttk.Label(inst_frame, text="Define the dimensions of uncut boards you have available",
+                 style='Subheader.TLabel').pack(anchor=tk.W, padx=0, pady=(0, 0))
         
         # Container for scrollable area and button
         container = ttk.Frame(parent)
@@ -949,14 +990,17 @@ class CuttingOptimizerGUI:
         header_frame = ttk.Frame(self.stock_scrollable_frame, style='Panel.TFrame')
         header_frame.pack(fill=tk.X, pady=8, padx=5)
 
-        ttk.Label(header_frame, text="Label", font=('Arial', 9, 'bold'),
-                 width=15).grid(row=0, column=0, padx=5, sticky='w')
+        ttk.Label(header_frame, text="Label", font=('Segoe UI', 9, 'bold'),
+                 foreground=DARK_FG_SECONDARY, width=15).grid(row=0, column=0, padx=5, sticky='w')
         ttk.Label(header_frame, text=f"Length ({self.units.get()})",
-                 font=('Arial', 9, 'bold'), width=12).grid(row=0, column=1, padx=5, sticky='w')
+                 font=('Segoe UI', 9, 'bold'), foreground=DARK_FG_SECONDARY,
+                 width=12).grid(row=0, column=1, padx=5, sticky='w')
         ttk.Label(header_frame, text=f"Width ({self.units.get()})",
-                 font=('Arial', 9, 'bold'), width=12).grid(row=0, column=2, padx=5, sticky='w')
+                 font=('Segoe UI', 9, 'bold'), foreground=DARK_FG_SECONDARY,
+                 width=12).grid(row=0, column=2, padx=5, sticky='w')
         ttk.Label(header_frame, text=f"Thickness ({self.units.get()})",
-                 font=('Arial', 9, 'bold'), width=14).grid(row=0, column=3, padx=5, sticky='w')
+                 font=('Segoe UI', 9, 'bold'), foreground=DARK_FG_SECONDARY,
+                 width=14).grid(row=0, column=3, padx=5, sticky='w')
         ttk.Label(header_frame, text="", width=8).grid(row=0, column=4)
 
         # Store header frame to update units later
@@ -967,22 +1011,22 @@ class CuttingOptimizerGUI:
         
         # Add button pinned to bottom with modern styling
         add_btn_frame = ttk.Frame(parent, style='Panel.TFrame')
-        add_btn_frame.pack(side=tk.BOTTOM, fill=tk.X, pady=12, padx=12)
-        add_btn = ttk.Button(add_btn_frame, text="➕ Add Stock Board",
+        add_btn_frame.pack(side=tk.BOTTOM, fill=tk.X, pady=12, padx=16)
+        add_btn = ttk.Button(add_btn_frame, text="+ Add Stock Board",
                             command=self.add_stock_board_row, style='Accent.TButton')
-        add_btn.pack(ipadx=10, ipady=3)
+        add_btn.pack()
         self.create_tooltip(add_btn, "Add another stock board size")
     
     def setup_cut_pieces_tab(self, parent):
         """Setup the cut pieces input tab"""
         # Instructions with modern styling
         inst_frame = ttk.Frame(parent, style='Panel.TFrame')
-        inst_frame.pack(fill=tk.X, padx=12, pady=12)
+        inst_frame.pack(fill=tk.X, padx=16, pady=16)
 
-        ttk.Label(inst_frame, text="✂ Define Pieces to Cut",
-                 style='Header.TLabel').pack(anchor=tk.W, padx=8, pady=(8, 2))
+        ttk.Label(inst_frame, text="Pieces to Cut",
+                 style='Header.TLabel').pack(anchor=tk.W, padx=0, pady=(0, 4))
         ttk.Label(inst_frame, text="Enter dimensions, quantities, and select the stock board for each piece",
-                 style='Subheader.TLabel').pack(anchor=tk.W, padx=8, pady=(0, 8))
+                 style='Subheader.TLabel').pack(anchor=tk.W, padx=0, pady=(0, 0))
         
         # Container for scrollable area and button
         container = ttk.Frame(parent)
@@ -1008,16 +1052,18 @@ class CuttingOptimizerGUI:
         header_frame = ttk.Frame(self.pieces_scrollable_frame, style='Panel.TFrame')
         header_frame.pack(fill=tk.X, pady=8, padx=5)
 
-        ttk.Label(header_frame, text="Label (Optional)", font=('Arial', 9, 'bold'),
-                 width=15).grid(row=0, column=0, padx=5, sticky='w')
+        ttk.Label(header_frame, text="Label (Optional)", font=('Segoe UI', 9, 'bold'),
+                 foreground=DARK_FG_SECONDARY, width=15).grid(row=0, column=0, padx=5, sticky='w')
         ttk.Label(header_frame, text=f"Length ({self.units.get()})",
-                 font=('Arial', 9, 'bold'), width=12).grid(row=0, column=1, padx=5, sticky='w')
+                 font=('Segoe UI', 9, 'bold'), foreground=DARK_FG_SECONDARY,
+                 width=12).grid(row=0, column=1, padx=5, sticky='w')
         ttk.Label(header_frame, text=f"Width ({self.units.get()})",
-                 font=('Arial', 9, 'bold'), width=12).grid(row=0, column=2, padx=5, sticky='w')
-        ttk.Label(header_frame, text="Quantity", font=('Arial', 9, 'bold'),
-                 width=10).grid(row=0, column=3, padx=5, sticky='w')
-        ttk.Label(header_frame, text="Stock Board", font=('Arial', 9, 'bold'),
-                 width=20).grid(row=0, column=4, padx=5, sticky='w')
+                 font=('Segoe UI', 9, 'bold'), foreground=DARK_FG_SECONDARY,
+                 width=12).grid(row=0, column=2, padx=5, sticky='w')
+        ttk.Label(header_frame, text="Quantity", font=('Segoe UI', 9, 'bold'),
+                 foreground=DARK_FG_SECONDARY, width=10).grid(row=0, column=3, padx=5, sticky='w')
+        ttk.Label(header_frame, text="Stock Board", font=('Segoe UI', 9, 'bold'),
+                 foreground=DARK_FG_SECONDARY, width=20).grid(row=0, column=4, padx=5, sticky='w')
         ttk.Label(header_frame, text="", width=8).grid(row=0, column=5)
 
         # Store header frame to update units later
@@ -1028,10 +1074,10 @@ class CuttingOptimizerGUI:
         
         # Add button pinned to bottom with modern styling
         add_btn_frame = ttk.Frame(parent, style='Panel.TFrame')
-        add_btn_frame.pack(side=tk.BOTTOM, fill=tk.X, pady=12, padx=12)
-        add_btn = ttk.Button(add_btn_frame, text="➕ Add Piece",
+        add_btn_frame.pack(side=tk.BOTTOM, fill=tk.X, pady=12, padx=16)
+        add_btn = ttk.Button(add_btn_frame, text="+ Add Piece",
                             command=self.add_piece_row, style='Accent.TButton')
-        add_btn.pack(ipadx=10, ipady=3)
+        add_btn.pack()
         self.create_tooltip(add_btn, "Add another piece to cut")
     
     def add_stock_board_row(self):
@@ -1054,7 +1100,7 @@ class CuttingOptimizerGUI:
         thickness_var.trace_add('write', lambda *args: self.update_all_stock_board_dropdowns())
         label_var.trace_add('write', lambda *args: self.update_all_stock_board_dropdowns())
         
-        remove_btn = ttk.Button(row_frame, text="✖",
+        remove_btn = ttk.Button(row_frame, text="×",
                                command=lambda: self.remove_stock_board_row(row_frame),
                                style='Delete.TButton', width=3)
         remove_btn.grid(row=0, column=4, padx=5)
@@ -1127,7 +1173,7 @@ class CuttingOptimizerGUI:
         if stock_board_combo['values'] and stock_board_combo['values'][0] != "No stock boards defined":
             stock_board_combo.current(0)
         
-        remove_btn = ttk.Button(row_frame, text="✖",
+        remove_btn = ttk.Button(row_frame, text="×",
                                command=lambda: self.remove_piece_row(row_frame),
                                style='Delete.TButton', width=3)
         remove_btn.grid(row=0, column=5, padx=5)
@@ -1230,7 +1276,29 @@ class CuttingOptimizerGUI:
             errors.append("At least one piece to cut must be defined")
         
         return errors, stock_boards, cut_pieces
-    
+
+    def calculate_shopping_list(self, results):
+        """Calculate shopping list of stock boards needed for purchase"""
+        shopping_list = {}
+
+        for result in results:
+            stock_board = result['stock_board']
+            # Create a unique key for each stock board type
+            key = f"{stock_board.label}|{stock_board.length}|{stock_board.width}|{stock_board.thickness}"
+
+            if key not in shopping_list:
+                shopping_list[key] = {
+                    'label': stock_board.label,
+                    'length': stock_board.length,
+                    'width': stock_board.width,
+                    'thickness': stock_board.thickness,
+                    'quantity': 0
+                }
+
+            shopping_list[key]['quantity'] += 1
+
+        return list(shopping_list.values())
+
     def run_optimization(self):
         """Run the optimization and generate outputs"""
         self.set_status("Validating inputs...", "info")
@@ -1274,13 +1342,27 @@ class CuttingOptimizerGUI:
             total_pieces = sum(len(r['placed_pieces']) for r in results)
             avg_waste = sum(r['waste_percentage'] for r in results) / len(results)
 
+            # Calculate shopping list
+            shopping_list = self.calculate_shopping_list(results)
+
             self.set_status(f"✓ Optimization complete: {total_boards} boards, {avg_waste:.1f}% avg waste", "success")
 
-            summary = f"Optimization Complete!\n\n"
+            # Build comprehensive summary with shopping list
+            summary = f"OPTIMIZATION COMPLETE\n"
+            summary += f"{'=' * 50}\n\n"
             summary += f"Total boards needed: {total_boards}\n"
             summary += f"Total pieces cut: {total_pieces}\n"
             summary += f"Average waste: {avg_waste:.1f}%\n\n"
-            summary += "Would you like to export the results?"
+
+            # Add shopping list
+            summary += f"SHOPPING LIST - Boards to Purchase\n"
+            summary += f"{'-' * 50}\n"
+            for item in shopping_list:
+                dims = f"{item['length']} × {item['width']} × {item['thickness']} {self.units.get()}"
+                summary += f"• {item['quantity']}x {item['label']}\n"
+                summary += f"  ({dims})\n"
+
+            summary += f"\nWould you like to export the cutting plan?"
 
             if messagebox.askyesno("Optimization Complete", summary):
                 self.export_results(results)
@@ -1332,7 +1414,7 @@ class CuttingOptimizerGUI:
             f.write(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
             f.write(f"Units: {self.units.get()}\n")
             f.write(f"Buffer/Kerf: {self.buffer.get()} {self.units.get()}\n\n")
-            
+
             f.write("SUMMARY\n")
             f.write("-" * 60 + "\n")
             f.write(f"Total boards required: {len(results)}\n")
@@ -1340,6 +1422,15 @@ class CuttingOptimizerGUI:
             f.write(f"Total pieces cut: {total_pieces}\n")
             avg_waste = sum(r['waste_percentage'] for r in results) / len(results)
             f.write(f"Average waste: {avg_waste:.1f}%\n\n")
+
+            # Add shopping list to text report
+            shopping_list = self.calculate_shopping_list(results)
+            f.write("SHOPPING LIST - Boards to Purchase\n")
+            f.write("-" * 60 + "\n")
+            for item in shopping_list:
+                dims = f"{item['length']} × {item['width']} × {item['thickness']} {self.units.get()}"
+                f.write(f"  {item['quantity']}x {item['label']} ({dims})\n")
+            f.write("\n")
             
             for result in results:
                 board_num = result['board_number']
