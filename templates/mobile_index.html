@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>Wood Cut Optimizer Mobile</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: #0d0d0d;
+            color: #e3e3e3;
+            padding: 0;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .header {
+            background: #1a1a1a;
+            padding: 16px;
+            text-align: center;
+            border-bottom: 1px solid #2d2d2d;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header h1 {
+            font-size: 20px;
+            color: #3b82f6;
+            margin-bottom: 4px;
+        }
+
+        .header p {
+            font-size: 12px;
+            color: #6b6b6b;
+        }
+
+        .container {
+            padding: 16px;
+            padding-bottom: 80px;
+        }
+
+        .section {
+            background: #1a1a1a;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+            border: 1px solid #2d2d2d;
+        }
+
+        .section-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #3b82f6;
+            margin-bottom: 12px;
+        }
+
+        .input-group {
+            margin-bottom: 12px;
+        }
+
+        .input-label {
+            display: block;
+            font-size: 13px;
+            color: #a0a0a0;
+            margin-bottom: 6px;
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 12px;
+            background: #242424;
+            border: 1px solid #333;
+            border-radius: 8px;
+            color: #e3e3e3;
+            font-size: 16px;
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: #3b82f6;
+        }
+
+        .input-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .input-row-3 {
+            display: grid;
+            grid-template-columns: 2fr 2fr 1fr;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: #10b981;
+            color: white;
+        }
+
+        .btn-primary:active {
+            background: #0d9668;
+        }
+
+        .btn-secondary {
+            background: #3b82f6;
+            color: white;
+            margin-bottom: 8px;
+        }
+
+        .btn-secondary:active {
+            background: #2563eb;
+        }
+
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+            padding: 8px 12px;
+            font-size: 13px;
+        }
+
+        .btn-danger:active {
+            background: #dc2626;
+        }
+
+        .board-item, .piece-item {
+            background: #242424;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            border: 1px solid #2d2d2d;
+        }
+
+        .item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .item-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #e3e3e3;
+        }
+
+        .units-toggle {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .units-toggle label {
+            flex: 1;
+            padding: 10px;
+            background: #242424;
+            border: 1px solid #333;
+            border-radius: 8px;
+            text-align: center;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .units-toggle input:checked + label {
+            background: #3b82f6;
+            border-color: #3b82f6;
+        }
+
+        .units-toggle input {
+            display: none;
+        }
+
+        .results {
+            display: none;
+        }
+
+        .results.show {
+            display: block;
+        }
+
+        .result-card {
+            background: #242424;
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            border: 1px solid #2d2d2d;
+        }
+
+        .result-header {
+            font-size: 16px;
+            font-weight: 600;
+            color: #3b82f6;
+            margin-bottom: 8px;
+        }
+
+        .result-stat {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #2d2d2d;
+        }
+
+        .result-stat:last-child {
+            border-bottom: none;
+        }
+
+        .stat-label {
+            color: #a0a0a0;
+            font-size: 13px;
+        }
+
+        .stat-value {
+            color: #e3e3e3;
+            font-weight: 600;
+            font-size: 13px;
+        }
+
+        .shopping-item {
+            background: #1a1a1a;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 8px;
+        }
+
+        .shopping-qty {
+            font-size: 18px;
+            font-weight: 700;
+            color: #10b981;
+        }
+
+        .shopping-label {
+            font-size: 14px;
+            color: #e3e3e3;
+            margin-top: 4px;
+        }
+
+        .shopping-dims {
+            font-size: 12px;
+            color: #6b6b6b;
+            margin-top: 2px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            display: none;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        .spinner {
+            border: 3px solid #2d2d2d;
+            border-top: 3px solid #3b82f6;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error {
+            background: #7f1d1d;
+            color: #fca5a5;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            display: none;
+        }
+
+        .error.show {
+            display: block;
+        }
+
+        .success {
+            background: #064e3b;
+            color: #6ee7b7;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            display: none;
+        }
+
+        .success.show {
+            display: block;
+        }
+
+        .canvas-container {
+            background: #1a1a1a;
+            border-radius: 8px;
+            padding: 16px;
+            margin-top: 12px;
+            overflow-x: auto;
+        }
+
+        canvas {
+            max-width: 100%;
+            height: auto;
+        }
+
+        select {
+            width: 100%;
+            padding: 12px;
+            background: #242424;
+            border: 1px solid #333;
+            border-radius: 8px;
+            color: #e3e3e3;
+            font-size: 14px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #6b6b6b;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Wood Cut Optimizer</h1>
+        <p>Mobile Companion</p>
+    </div>
+
+    <div class="container">
+        <div id="errorMsg" class="error"></div>
+        <div id="successMsg" class="success"></div>
+
+        <!-- Units Selection -->
+        <div class="section">
+            <div class="section-title">Settings</div>
+            <div class="units-toggle">
+                <input type="radio" name="units" id="units-in" value="in" checked>
+                <label for="units-in">Inches</label>
+                <input type="radio" name="units" id="units-cm" value="cm">
+                <label for="units-cm">Centimeters</label>
+            </div>
+            <div class="input-group">
+                <label class="input-label">Saw Kerf / Buffer</label>
+                <input type="number" id="buffer" class="input-field" value="0.125" step="0.001">
+            </div>
+        </div>
+
+        <!-- Stock Boards -->
+        <div class="section">
+            <div class="section-title">Stock Boards</div>
+            <div id="stockBoardsList"></div>
+            <button class="btn btn-secondary" onclick="addStockBoard()">+ Add Stock Board</button>
+        </div>
+
+        <!-- Cut Pieces -->
+        <div class="section">
+            <div class="section-title">Pieces to Cut</div>
+            <div id="cutPiecesList"></div>
+            <button class="btn btn-secondary" onclick="addCutPiece()">+ Add Piece</button>
+        </div>
+
+        <!-- Optimize Button -->
+        <button class="btn btn-primary" onclick="runOptimization()">🚀 Calculate Optimization</button>
+
+        <!-- Loading -->
+        <div id="loading" class="loading">
+            <div class="spinner"></div>
+            <p>Optimizing...</p>
+        </div>
+
+        <!-- Results -->
+        <div id="results" class="results">
+            <div class="section">
+                <div class="section-title">Summary</div>
+                <div class="result-card">
+                    <div class="result-stat">
+                        <span class="stat-label">Total Boards Needed</span>
+                        <span class="stat-value" id="totalBoards">-</span>
+                    </div>
+                    <div class="result-stat">
+                        <span class="stat-label">Total Pieces Cut</span>
+                        <span class="stat-value" id="totalPieces">-</span>
+                    </div>
+                    <div class="result-stat">
+                        <span class="stat-label">Average Waste</span>
+                        <span class="stat-value" id="avgWaste">-</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">Shopping List</div>
+                <div id="shoppingList"></div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">Cutting Plans</div>
+                <div id="cuttingPlans"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let stockBoards = [];
+        let cutPieces = [];
+
+        // Initialize with one board and one piece
+        window.onload = function() {
+            addStockBoard();
+            addCutPiece();
+        };
+
+        function addStockBoard() {
+            const id = Date.now();
+            stockBoards.push({ id, label: `Board ${stockBoards.length + 1}`, length: '', width: '', thickness: '' });
+            renderStockBoards();
+        }
+
+        function removeStockBoard(id) {
+            stockBoards = stockBoards.filter(b => b.id !== id);
+            renderStockBoards();
+            renderCutPieces(); // Update dropdowns
+        }
+
+        function addCutPiece() {
+            const id = Date.now();
+            cutPieces.push({ id, label: '', length: '', width: '', quantity: '1', stock_board_index: 0 });
+            renderCutPieces();
+        }
+
+        function removeCutPiece(id) {
+            cutPieces = cutPieces.filter(p => p.id !== id);
+            renderCutPieces();
+        }
+
+        function renderStockBoards() {
+            const container = document.getElementById('stockBoardsList');
+            if (stockBoards.length === 0) {
+                container.innerHTML = '<div class="empty-state">No stock boards added</div>';
+                return;
+            }
+
+            container.innerHTML = stockBoards.map(board => `
+                <div class="board-item">
+                    <div class="item-header">
+                        <input type="text" class="input-field" placeholder="Label (optional)"
+                               value="${board.label}" onchange="updateBoard(${board.id}, 'label', this.value)"
+                               style="width: 60%; font-size: 14px; padding: 8px;">
+                        <button class="btn btn-danger" onclick="removeStockBoard(${board.id})">×</button>
+                    </div>
+                    <div class="input-row-3">
+                        <input type="number" class="input-field" placeholder="Length"
+                               value="${board.length}" onchange="updateBoard(${board.id}, 'length', this.value)"
+                               style="padding: 10px; font-size: 14px;">
+                        <input type="number" class="input-field" placeholder="Width"
+                               value="${board.width}" onchange="updateBoard(${board.id}, 'width', this.value)"
+                               style="padding: 10px; font-size: 14px;">
+                        <input type="number" class="input-field" placeholder="Thick"
+                               value="${board.thickness}" onchange="updateBoard(${board.id}, 'thickness', this.value)"
+                               style="padding: 10px; font-size: 14px;">
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderCutPieces() {
+            const container = document.getElementById('cutPiecesList');
+            if (cutPieces.length === 0) {
+                container.innerHTML = '<div class="empty-state">No pieces added</div>';
+                return;
+            }
+
+            const boardOptions = stockBoards.map((b, i) =>
+                `<option value="${i}">${b.label} (${b.thickness || '?'})</option>`
+            ).join('');
+
+            container.innerHTML = cutPieces.map(piece => `
+                <div class="piece-item">
+                    <div class="item-header">
+                        <input type="text" class="input-field" placeholder="Label (optional)"
+                               value="${piece.label}" onchange="updatePiece(${piece.id}, 'label', this.value)"
+                               style="width: 60%; font-size: 14px; padding: 8px;">
+                        <button class="btn btn-danger" onclick="removeCutPiece(${piece.id})">×</button>
+                    </div>
+                    <div class="input-row">
+                        <input type="number" class="input-field" placeholder="Length"
+                               value="${piece.length}" onchange="updatePiece(${piece.id}, 'length', this.value)"
+                               style="padding: 10px; font-size: 14px;">
+                        <input type="number" class="input-field" placeholder="Width"
+                               value="${piece.width}" onchange="updatePiece(${piece.id}, 'width', this.value)"
+                               style="padding: 10px; font-size: 14px;">
+                    </div>
+                    <div class="input-row">
+                        <input type="number" class="input-field" placeholder="Qty"
+                               value="${piece.quantity}" onchange="updatePiece(${piece.id}, 'quantity', this.value)"
+                               style="padding: 10px; font-size: 14px;">
+                        <select class="input-field" onchange="updatePiece(${piece.id}, 'stock_board_index', this.value)"
+                                style="padding: 10px; font-size: 14px;">
+                            ${boardOptions}
+                        </select>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function updateBoard(id, field, value) {
+            const board = stockBoards.find(b => b.id === id);
+            if (board) board[field] = value;
+            if (field === 'label' || field === 'thickness') {
+                renderCutPieces(); // Update dropdowns
+            }
+        }
+
+        function updatePiece(id, field, value) {
+            const piece = cutPieces.find(p => p.id === id);
+            if (piece) piece[field] = value;
+        }
+
+        function showError(msg) {
+            const el = document.getElementById('errorMsg');
+            el.textContent = msg;
+            el.classList.add('show');
+            setTimeout(() => el.classList.remove('show'), 5000);
+        }
+
+        function showSuccess(msg) {
+            const el = document.getElementById('successMsg');
+            el.textContent = msg;
+            el.classList.add('show');
+            setTimeout(() => el.classList.remove('show'), 3000);
+        }
+
+        async function runOptimization() {
+            // Validate
+            if (stockBoards.length === 0) {
+                showError('Please add at least one stock board');
+                return;
+            }
+            if (cutPieces.length === 0) {
+                showError('Please add at least one piece to cut');
+                return;
+            }
+
+            // Get units
+            const units = document.querySelector('input[name="units"]:checked').value;
+            const buffer = parseFloat(document.getElementById('buffer').value) || 0.125;
+
+            // Prepare data
+            const data = {
+                stock_boards: stockBoards.map(b => ({
+                    label: b.label || 'Board',
+                    length: parseFloat(b.length) || 0,
+                    width: parseFloat(b.width) || 0,
+                    thickness: parseFloat(b.thickness) || 0
+                })),
+                cut_pieces: cutPieces.map(p => ({
+                    label: p.label || '',
+                    length: parseFloat(p.length) || 0,
+                    width: parseFloat(p.width) || 0,
+                    quantity: parseInt(p.quantity) || 1,
+                    stock_board_index: parseInt(p.stock_board_index) || 0
+                })),
+                buffer: buffer,
+                units: units
+            };
+
+            // Show loading
+            document.getElementById('loading').classList.add('show');
+            document.getElementById('results').classList.remove('show');
+
+            try {
+                const response = await fetch('/api/optimize', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+
+                if (!result.success) {
+                    throw new Error(result.error || 'Optimization failed');
+                }
+
+                displayResults(result, units);
+                showSuccess('Optimization complete!');
+
+            } catch (error) {
+                showError(error.message);
+            } finally {
+                document.getElementById('loading').classList.remove('show');
+            }
+        }
+
+        function displayResults(result, units) {
+            // Summary
+            document.getElementById('totalBoards').textContent = result.summary.total_boards;
+            document.getElementById('totalPieces').textContent = result.summary.total_pieces;
+            document.getElementById('avgWaste').textContent = result.summary.avg_waste + '%';
+
+            // Shopping list
+            const shoppingHtml = result.shopping_list.map(item => `
+                <div class="shopping-item">
+                    <div class="shopping-qty">${item.quantity}x</div>
+                    <div class="shopping-label">${item.label}</div>
+                    <div class="shopping-dims">${item.length} × ${item.width} × ${item.thickness} ${units}</div>
+                </div>
+            `).join('');
+            document.getElementById('shoppingList').innerHTML = shoppingHtml;
+
+            // Cutting plans
+            const plansHtml = result.results.map(board => `
+                <div class="result-card">
+                    <div class="result-header">Board #${board.board_number} - ${board.stock_board.label}</div>
+                    <div class="result-stat">
+                        <span class="stat-label">Dimensions</span>
+                        <span class="stat-value">${board.stock_board.length} × ${board.stock_board.width} × ${board.stock_board.thickness} ${units}</span>
+                    </div>
+                    <div class="result-stat">
+                        <span class="stat-label">Pieces</span>
+                        <span class="stat-value">${board.pieces_count}</span>
+                    </div>
+                    <div class="result-stat">
+                        <span class="stat-label">Waste</span>
+                        <span class="stat-value">${board.waste_percentage}%</span>
+                    </div>
+                    <div class="canvas-container">
+                        <canvas id="canvas-${board.board_number}" width="600" height="400"></canvas>
+                    </div>
+                </div>
+            `).join('');
+            document.getElementById('cuttingPlans').innerHTML = plansHtml;
+
+            // Draw boards
+            result.results.forEach(board => {
+                drawBoard(board, units);
+            });
+
+            // Show results
+            document.getElementById('results').classList.add('show');
+            document.getElementById('results').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function drawBoard(board, units) {
+            const canvas = document.getElementById(`canvas-${board.board_number}`);
+            if (!canvas) return;
+
+            const ctx = canvas.getContext('2d');
+            const width = canvas.width;
+            const height = canvas.height;
+
+            // Clear
+            ctx.fillStyle = '#1a1a1a';
+            ctx.fillRect(0, 0, width, height);
+
+            // Scale
+            const margin = 40;
+            const scale = Math.min(
+                (width - 2 * margin) / board.stock_board.length,
+                (height - 2 * margin) / board.stock_board.width
+            );
+
+            // Board outline
+            ctx.strokeStyle = '#3b82f6';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(
+                margin,
+                margin,
+                board.stock_board.length * scale,
+                board.stock_board.width * scale
+            );
+
+            // Colors
+            const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
+
+            // Draw pieces
+            board.placed_pieces.forEach((piece, i) => {
+                const x = margin + piece.x * scale;
+                const y = margin + piece.y * scale;
+                const w = piece.width * scale;
+                const h = piece.height * scale;
+
+                // Fill
+                ctx.fillStyle = colors[i % colors.length] + '40';
+                ctx.fillRect(x, y, w, h);
+
+                // Border
+                ctx.strokeStyle = colors[i % colors.length];
+                ctx.lineWidth = 1;
+                ctx.strokeRect(x, y, w, h);
+
+                // Label
+                ctx.fillStyle = '#e3e3e3';
+                ctx.font = '10px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText(
+                    piece.label || `${piece.original_width}×${piece.original_height}`,
+                    x + w / 2,
+                    y + h / 2
+                );
+            });
+        }
+    </script>
+</body>
+</html>
